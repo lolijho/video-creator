@@ -10,9 +10,9 @@ RUN npm ci && npx prisma generate
 
 COPY . .
 
+# Force dummy DB for build - ignore any DATABASE_URL build arg
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-RUN npm run build
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npm run build
 
 ENV NODE_ENV=production
 ENV PORT=3000
