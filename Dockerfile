@@ -19,6 +19,4 @@ ENV HOSTNAME=0.0.0.0
 
 EXPOSE 3000
 
-# NO HEALTHCHECK - next build at startup needs time
-
-CMD ["sh", "-c", "echo '==> DB sync...' && npx prisma db push --accept-data-loss 2>&1 || true; echo '==> Building...' && ENCRYPTION_KEY=${ENCRYPTION_KEY:-dummykey1234567890abcdef12345678} DATABASE_URL=${DATABASE_URL:-postgresql://x:x@localhost/x} ./node_modules/.bin/next build --no-lint 2>&1; echo '==> Starting...' && exec ./node_modules/.bin/next start -p ${PORT:-3000}"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss 2>&1 || true; ./node_modules/.bin/next start -p ${PORT:-3000}"]

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCachedModels, refreshModelsCache } from "@/lib/models-cache";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const refresh = searchParams.get("refresh") === "true";

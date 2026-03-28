@@ -4,6 +4,8 @@ import { getVideoPath } from "@/lib/storage";
 import { createReadStream, statSync } from "fs";
 import { Readable } from "stream";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _request: Request,
   { params }: { params: { id: string } }

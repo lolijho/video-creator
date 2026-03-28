@@ -7,6 +7,8 @@ import { imageToVideoSchema } from "@/lib/validators";
 import { saveUploadedFile } from "@/lib/storage";
 import sharp from "sharp";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();

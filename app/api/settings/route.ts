@@ -4,6 +4,8 @@ import { encrypt, decrypt } from "@/lib/crypto";
 import { settingsSchema } from "@/lib/validators";
 import { createApifreeClient } from "@/lib/apifree";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     let settings = await prisma.appSettings.findUnique({

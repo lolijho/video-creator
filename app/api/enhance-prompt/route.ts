@@ -3,6 +3,8 @@ import { getApiKey } from "@/lib/api-key";
 import { createApifreeClient } from "@/lib/apifree";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   prompt: z.string().min(1).max(2000),
 });

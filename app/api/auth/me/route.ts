@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession, isAuthEnabled } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   if (!isAuthEnabled()) {
     return NextResponse.json({ authenticated: true, user: "anonymous" });

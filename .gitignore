@@ -1,5 +1,5 @@
 node_modules/
-.next/
+# .next/ - committed for Docker deployment
 .env
 .env.local
 storage/

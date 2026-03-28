@@ -1,0 +1,1 @@
+{"version":1,"functions":{"/api/auth/login":{},"/api/auth/logout":{},"/api/auth/me":{},"/api/enhance-prompt":{},"/api/generate/image2video":{},"/api/gallery":{},"/api/generate/text2video":{},"/api/generate/video2video":{},"/api/health":{},"/api/jobs/[id]/retry":{},"/api/jobs/[id]":{},"/api/jobs":{},"/api/models":{},"/api/settings":{},"/api/video/[id]/download":{},"/":{}}}
