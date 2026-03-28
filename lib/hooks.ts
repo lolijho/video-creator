@@ -1,5 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+// Auth
+export function useAuth() {
+  return useQuery({
+    queryKey: ["auth"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) return { authenticated: false, user: null };
+      return res.json() as Promise<{ authenticated: boolean; user: string }>;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 // Types
 export interface VideoJob {
   id: string;
