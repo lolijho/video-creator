@@ -10,14 +10,12 @@ RUN npm ci && npx prisma generate
 
 COPY . .
 
-# Coolify injects ARG DATABASE_URL - override it for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://x:x@localhost:5432/x"
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN ./node_modules/.bin/next build > /tmp/build.log 2>&1 || (cat /tmp/build.log && exit 1)
-# Unset so runtime uses the real one from Coolify
+ENV ENCRYPTION_KEY="buildtimedummykey1234567890abcdef"
+RUN NODE_OPTIONS="--max-old-space-size=2048" ./node_modules/.bin/next build --no-lint
 ENV DATABASE_URL=""
-ENV NODE_OPTIONS=""
+ENV ENCRYPTION_KEY=""
 
 ENV NODE_ENV=production
 ENV PORT=3000
