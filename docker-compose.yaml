@@ -1,19 +1,24 @@
-version: "3.8"
-
 services:
   app:
     build: .
     ports:
       - "3000:3000"
     volumes:
-      - ./storage:/app/storage
-    env_file: .env
+      - app_storage:/app/storage
     environment:
       - DATABASE_URL=postgresql://videogen:${POSTGRES_PASSWORD:-changeme}@postgres:5432/videogen
       - REDIS_URL=redis://redis:6379
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4}
+      - AUTH_USERNAME=${AUTH_USERNAME:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-admin}
+      - APIFREE_API_KEY=${APIFREE_API_KEY:-}
+      - APIFREE_BASE_URL=${APIFREE_BASE_URL:-https://api.apifree.ai/v1}
+      - MOCK_MODE=${MOCK_MODE:-false}
+      - STORAGE_PATH=/app/storage
+      - NODE_ENV=production
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
     restart: unless-stopped
@@ -21,24 +26,8 @@ services:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  worker:
-    build: .
-    command: ["node", "-e", "require('./lib/workers/pollVideo').startWorker()"]
-    env_file: .env
-    environment:
-      - DATABASE_URL=postgresql://videogen:${POSTGRES_PASSWORD:-changeme}@postgres:5432/videogen
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - ./storage:/app/storage
-    depends_on:
-      redis:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
+      retries: 5
+      start_period: 60s
 
   redis:
     image: redis:7-alpine
@@ -49,7 +38,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
 
   postgres:
     image: postgres:16-alpine
@@ -61,11 +50,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U videogen"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U videogen -d videogen"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
 
 volumes:
+  app_storage:
   redis_data:
   postgres_data:
