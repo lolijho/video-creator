@@ -21,87 +21,35 @@ export interface ModelMetadata {
   description?: string;
 }
 
-const MODEL_METADATA: Record<string, Partial<ModelMetadata>> = {
-  "veo-3": {
-    maxDuration: 8,
-    supportsAudio: true,
-    estimatedSeconds: 120,
-    badge: "HD",
-    description: "Google's flagship video model with audio generation",
-  },
-  "veo-3-fast": {
-    maxDuration: 8,
-    supportsAudio: true,
-    estimatedSeconds: 45,
-    badge: "FAST",
-    description: "Faster variant of Veo 3, great quality/speed balance",
-  },
-  "veo-2": {
-    maxDuration: 10,
-    supportsAudio: false,
-    estimatedSeconds: 90,
-    badge: "I2V",
-    description: "Optimized for image-to-video generation",
-  },
-  "kling-v1.6-standard": {
-    maxDuration: 10,
-    supportsAudio: false,
-    estimatedSeconds: 60,
-    description: "Kling 1.6 standard quality",
-  },
-  "kling-v1.6-pro": {
-    maxDuration: 10,
-    supportsAudio: false,
-    estimatedSeconds: 120,
-    badge: "PRO",
-    description: "Kling 1.6 professional quality",
-  },
-  "kling-v2": {
-    maxDuration: 10,
-    supportsAudio: false,
-    estimatedSeconds: 90,
-    badge: "NEW",
-    description: "Latest Kling model",
-  },
-  "minimax-video-01": {
-    maxDuration: 6,
-    supportsAudio: false,
-    estimatedSeconds: 60,
-    description: "MiniMax Hailuo video generation",
-  },
-  "luma-dream-machine": {
-    maxDuration: 5,
-    supportsAudio: false,
-    estimatedSeconds: 60,
-    description: "Luma AI Dream Machine",
-  },
-  "wan-2.1": {
-    maxDuration: 5,
-    supportsAudio: false,
-    estimatedSeconds: 45,
-    badge: "OPEN",
-    description: "WAN 2.1 open source model",
-  },
-  "cogvideox-5b": {
-    maxDuration: 6,
-    supportsAudio: false,
-    estimatedSeconds: 90,
-    description: "CogVideoX by Zhipu AI",
-  },
-  "ltx-video": {
-    maxDuration: 5,
-    supportsAudio: false,
-    estimatedSeconds: 30,
-    badge: "FAST",
-    description: "Ultra-fast video generation",
-  },
-  "hunyuan-video": {
-    maxDuration: 5,
-    supportsAudio: false,
-    estimatedSeconds: 90,
-    description: "Tencent Hunyuan video model",
-  },
-};
+const MODEL_METADATA: Record<string, Partial<ModelMetadata>> = {};
+
+// Match metadata by partial ID
+function getMetadataForModel(id: string): Partial<ModelMetadata> {
+  const lower = id.toLowerCase();
+  if (lower.includes("veo-3") && lower.includes("fast") && lower.includes("image"))
+    return { maxDuration: 8, supportsAudio: false, estimatedSeconds: 45, badge: "FAST", description: "Veo 3.1 Fast image-to-video" };
+  if (lower.includes("veo-3.1") && lower.includes("image"))
+    return { maxDuration: 8, supportsAudio: false, estimatedSeconds: 90, badge: "HD", description: "Veo 3.1 image-to-video" };
+  if (lower.includes("veo-3") && lower.includes("fast"))
+    return { maxDuration: 8, supportsAudio: true, estimatedSeconds: 45, badge: "FAST", description: "Veo 3 Fast text-to-video" };
+  if (lower.includes("veo-3"))
+    return { maxDuration: 8, supportsAudio: true, estimatedSeconds: 120, badge: "HD", description: "Google Veo 3 with audio" };
+  if (lower.includes("kling") && lower.includes("pro"))
+    return { maxDuration: 10, estimatedSeconds: 120, badge: "PRO", description: "Kling Pro quality" };
+  if (lower.includes("kling"))
+    return { maxDuration: 10, estimatedSeconds: 60, description: "Kling video generation" };
+  if (lower.includes("minimax"))
+    return { maxDuration: 6, estimatedSeconds: 60, description: "MiniMax Hailuo" };
+  if (lower.includes("luma") || lower.includes("dream"))
+    return { maxDuration: 5, estimatedSeconds: 60, description: "Luma Dream Machine" };
+  if (lower.includes("wan"))
+    return { maxDuration: 5, estimatedSeconds: 45, badge: "OPEN", description: "WAN 2.1 open source" };
+  if (lower.includes("ltx"))
+    return { maxDuration: 5, estimatedSeconds: 30, badge: "FAST", description: "LTX ultra-fast" };
+  if (lower.includes("hunyuan"))
+    return { maxDuration: 5, estimatedSeconds: 90, description: "Tencent Hunyuan" };
+  return {};
+}
 
 const DEFAULT_METADATA: ModelMetadata = {
   supportedTypes: ["text2video"],
@@ -129,8 +77,8 @@ function parseModelTypes(type: unknown): string[] {
 }
 
 function isVideoModel(model: { id: string; type?: unknown }): boolean {
-  const knownVideoIds = Object.keys(MODEL_METADATA);
-  if (knownVideoIds.includes(model.id)) return true;
+  // Check if model ID contains video-related keywords
+  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream/i.test(model.id)) return true;
 
   if (model.type) {
     const typeStr = typeof model.type === "string" ? model.type : JSON.stringify(model.type);
@@ -154,7 +102,7 @@ export async function getCachedModels(): Promise<VideoModel[]> {
       provider: m.provider || "unknown",
       metadata: {
         ...DEFAULT_METADATA,
-        ...MODEL_METADATA[m.id],
+        ...getMetadataForModel(m.id),
         supportedTypes: m.type as string[],
         ...(m.metadata as Record<string, unknown> || {}),
       },
@@ -191,7 +139,7 @@ export async function refreshModelsCache(): Promise<VideoModel[]> {
 
     const models: VideoModel[] = videoModels.map((m) => {
       const types = parseModelTypes(m.type);
-      const meta = MODEL_METADATA[m.id] || {};
+      const meta = getMetadataForModel(m.id);
 
       return {
         id: m.id,
@@ -231,21 +179,24 @@ export async function refreshModelsCache(): Promise<VideoModel[]> {
 }
 
 function getHardcodedVideoModels(): VideoModel[] {
-  return Object.entries(MODEL_METADATA).map(([id, meta]) => ({
-    id,
-    name: id
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase()),
-    types: meta.maxDuration
-      ? id.includes("veo-2")
-        ? ["image2video", "text2video"]
-        : ["text2video", "image2video"]
-      : ["text2video"],
-    provider: id.startsWith("veo")
-      ? "google"
-      : id.startsWith("kling")
-        ? "klingai"
-        : "unknown",
-    metadata: { ...DEFAULT_METADATA, ...meta, supportedTypes: ["text2video"] },
+  const models = [
+    { id: "google/veo-3/text-to-video", name: "Veo 3", types: ["text2video"], provider: "google" },
+    { id: "google/veo-3-fast/text-to-video", name: "Veo 3 Fast", types: ["text2video"], provider: "google" },
+    { id: "google/veo-3.1-fast/image-to-video", name: "Veo 3.1 Fast I2V", types: ["image2video"], provider: "google" },
+    { id: "google/veo-3.1/image-to-video", name: "Veo 3.1 I2V", types: ["image2video"], provider: "google" },
+    { id: "kling-v1.6-standard/text-to-video", name: "Kling 1.6 Standard", types: ["text2video"], provider: "klingai" },
+    { id: "kling-v1.6-pro/text-to-video", name: "Kling 1.6 Pro", types: ["text2video"], provider: "klingai" },
+    { id: "minimax-video-01/text-to-video", name: "MiniMax Hailuo", types: ["text2video"], provider: "minimax" },
+    { id: "wan-ai/wan-2.1/text-to-video", name: "WAN 2.1", types: ["text2video"], provider: "wan-ai" },
+    { id: "ltx-video/text-to-video", name: "LTX Video", types: ["text2video"], provider: "lightricks" },
+  ];
+
+  return models.map((m) => ({
+    ...m,
+    metadata: {
+      ...DEFAULT_METADATA,
+      ...getMetadataForModel(m.id),
+      supportedTypes: m.types,
+    },
   }));
 }

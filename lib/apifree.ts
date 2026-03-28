@@ -1,21 +1,22 @@
 const MOCK_VIDEOS = [
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-  "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
 ];
 
 interface SubmitResponse {
-  task_id: string;
-  status: string;
+  request_id: string;
 }
 
-interface TaskStatusResponse {
-  status: "queued" | "processing" | "completed" | "failed";
+interface StatusResponse {
+  status: "queued" | "processing" | "success" | "failed" | string;
+}
+
+interface ResultResponse {
   video_url?: string;
-  thumbnail_url?: string;
-  duration?: number;
-  error?: string;
+  url?: string;
+  videos?: Array<{ url: string }>;
+  [key: string]: unknown;
 }
 
 interface ApiModel {
@@ -38,7 +39,7 @@ export class ApifreeClient {
   private isMock: boolean;
 
   constructor(apiKey: string) {
-    this.baseUrl = process.env.APIFREE_BASE_URL || "https://api.apifree.ai/v1";
+    this.baseUrl = (process.env.APIFREE_BASE_URL || "https://api.apifree.ai/v1").replace(/\/$/, "");
     this.apiKey = apiKey;
     this.isMock = process.env.MOCK_MODE === "true";
   }
@@ -99,12 +100,9 @@ export class ApifreeClient {
     motionIntensity?: string;
     seed?: number;
     withAudio?: boolean;
-  }): Promise<SubmitResponse> {
+  }): Promise<{ request_id: string }> {
     if (this.isMock) {
-      return {
-        task_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        status: "queued",
-      };
+      return { request_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` };
     }
 
     const body: Record<string, unknown> = {
@@ -114,12 +112,11 @@ export class ApifreeClient {
     if (params.negativePrompt) body.negative_prompt = params.negativePrompt;
     if (params.aspectRatio) body.aspect_ratio = params.aspectRatio;
     if (params.duration) body.duration = params.duration;
-    if (params.quality) body.quality = params.quality;
-    if (params.motionIntensity) body.motion_intensity = params.motionIntensity;
+    if (params.quality) body.resolution = params.quality === "hd" ? "1080p" : params.quality === "4k" ? "2160p" : "720p";
     if (params.seed !== undefined) body.seed = params.seed;
     if (params.withAudio !== undefined) body.with_audio = params.withAudio;
 
-    const res = await this.fetchWithRetry(`${this.baseUrl}/video/generate`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/video/submit`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -130,7 +127,10 @@ export class ApifreeClient {
       throw new Error(`API error ${res.status}: ${errBody}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    const requestId = data.resp_data?.request_id || data.request_id || data.id;
+    if (!requestId) throw new Error("No request_id in response");
+    return { request_id: requestId };
   }
 
   async submitImageToVideo(params: {
@@ -143,12 +143,9 @@ export class ApifreeClient {
     quality?: string;
     motionIntensity?: string;
     seed?: number;
-  }): Promise<SubmitResponse> {
+  }): Promise<{ request_id: string }> {
     if (this.isMock) {
-      return {
-        task_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        status: "queued",
-      };
+      return { request_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` };
     }
 
     const body: Record<string, unknown> = {
@@ -159,11 +156,10 @@ export class ApifreeClient {
     if (params.motionPrompt) body.motion_prompt = params.motionPrompt;
     if (params.aspectRatio) body.aspect_ratio = params.aspectRatio;
     if (params.duration) body.duration = params.duration;
-    if (params.quality) body.quality = params.quality;
-    if (params.motionIntensity) body.motion_intensity = params.motionIntensity;
+    if (params.quality) body.resolution = params.quality === "hd" ? "1080p" : params.quality === "4k" ? "2160p" : "720p";
     if (params.seed !== undefined) body.seed = params.seed;
 
-    const res = await this.fetchWithRetry(`${this.baseUrl}/video/generate`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/video/submit`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -174,7 +170,10 @@ export class ApifreeClient {
       throw new Error(`API error ${res.status}: ${errBody}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    const requestId = data.resp_data?.request_id || data.request_id || data.id;
+    if (!requestId) throw new Error("No request_id in response");
+    return { request_id: requestId };
   }
 
   async submitVideoToVideo(params: {
@@ -185,12 +184,9 @@ export class ApifreeClient {
     aspectRatio?: string;
     duration?: number;
     quality?: string;
-  }): Promise<SubmitResponse> {
+  }): Promise<{ request_id: string }> {
     if (this.isMock) {
-      return {
-        task_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        status: "queued",
-      };
+      return { request_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` };
     }
 
     const body: Record<string, unknown> = {
@@ -201,9 +197,9 @@ export class ApifreeClient {
     if (params.strength !== undefined) body.strength = params.strength;
     if (params.aspectRatio) body.aspect_ratio = params.aspectRatio;
     if (params.duration) body.duration = params.duration;
-    if (params.quality) body.quality = params.quality;
+    if (params.quality) body.resolution = params.quality === "hd" ? "1080p" : "720p";
 
-    const res = await this.fetchWithRetry(`${this.baseUrl}/video/generate`, {
+    const res = await this.fetchWithRetry(`${this.baseUrl}/video/submit`, {
       method: "POST",
       headers: this.headers(),
       body: JSON.stringify(body),
@@ -214,28 +210,23 @@ export class ApifreeClient {
       throw new Error(`API error ${res.status}: ${errBody}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    const requestId = data.resp_data?.request_id || data.request_id || data.id;
+    if (!requestId) throw new Error("No request_id in response");
+    return { request_id: requestId };
   }
 
-  async getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
+  async getTaskStatus(requestId: string): Promise<{ status: string }> {
     if (this.isMock) {
-      const mockId = taskId;
-      const createdTs = parseInt(mockId.split("_")[1] || "0");
+      const createdTs = parseInt(requestId.split("_")[1] || "0");
       const elapsed = Date.now() - createdTs;
-
       if (elapsed < 5000) return { status: "queued" };
       if (elapsed < 15000) return { status: "processing" };
-
-      return {
-        status: "completed",
-        video_url: MOCK_VIDEOS[Math.floor(Math.random() * MOCK_VIDEOS.length)],
-        thumbnail_url: undefined,
-        duration: 10,
-      };
+      return { status: "success" };
     }
 
     const res = await this.fetchWithRetry(
-      `${this.baseUrl}/video/status/${taskId}`,
+      `${this.baseUrl}/video/${requestId}/status`,
       { method: "GET", headers: this.headers() }
     );
 
@@ -244,7 +235,33 @@ export class ApifreeClient {
       throw new Error(`API error ${res.status}: ${errBody}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    const status = data.resp_data?.status || data.status || "unknown";
+    return { status };
+  }
+
+  async getTaskResult(requestId: string): Promise<{ video_url: string }> {
+    if (this.isMock) {
+      return { video_url: MOCK_VIDEOS[Math.floor(Math.random() * MOCK_VIDEOS.length)] };
+    }
+
+    const res = await this.fetchWithRetry(
+      `${this.baseUrl}/video/${requestId}/result`,
+      { method: "GET", headers: this.headers() }
+    );
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const respData = data.resp_data || data;
+    const videoUrl = respData.video_url || respData.url ||
+      (respData.videos && respData.videos[0]?.url) || "";
+
+    if (!videoUrl) throw new Error("No video URL in result");
+    return { video_url: videoUrl };
   }
 
   async listModels(): Promise<ApiModel[]> {
@@ -252,18 +269,22 @@ export class ApifreeClient {
       return getHardcodedModels();
     }
 
-    const res = await this.fetchWithRetry(`${this.baseUrl}/models`, {
-      method: "GET",
-      headers: this.headers(),
-    });
+    try {
+      const res = await this.fetchWithRetry(`${this.baseUrl}/models`, {
+        method: "GET",
+        headers: this.headers(),
+      });
 
-    if (!res.ok) {
-      console.error("Failed to fetch models, using hardcoded fallback");
+      if (!res.ok) {
+        console.error("Failed to fetch models, using hardcoded fallback");
+        return getHardcodedModels();
+      }
+
+      const data = await res.json();
+      return data.data || data.models || data || [];
+    } catch {
       return getHardcodedModels();
     }
-
-    const data = await res.json();
-    return data.data || data.models || data || [];
   }
 
   async testConnection(): Promise<TestConnectionResult> {
@@ -312,18 +333,16 @@ export class ApifreeClient {
 
 function getHardcodedModels(): ApiModel[] {
   return [
-    { id: "veo-3", name: "Veo 3", type: "text-to-video", owned_by: "google" },
-    { id: "veo-3-fast", name: "Veo 3 Fast", type: "text-to-video", owned_by: "google" },
-    { id: "veo-2", name: "Veo 2", type: "image-to-video", owned_by: "google" },
-    { id: "kling-v1.6-standard", name: "Kling 1.6 Standard", type: "text-to-video", owned_by: "klingai" },
-    { id: "kling-v1.6-pro", name: "Kling 1.6 Pro", type: "text-to-video", owned_by: "klingai" },
-    { id: "kling-v2", name: "Kling 2", type: "text-to-video", owned_by: "klingai" },
-    { id: "minimax-video-01", name: "MiniMax Hailuo", type: "text-to-video", owned_by: "minimax" },
-    { id: "luma-dream-machine", name: "Luma Dream Machine", type: "text-to-video", owned_by: "luma" },
-    { id: "wan-2.1", name: "WAN 2.1", type: "text-to-video", owned_by: "wan-ai" },
-    { id: "cogvideox-5b", name: "CogVideoX", type: "text-to-video", owned_by: "zhipu" },
-    { id: "ltx-video", name: "LTX Video", type: "text-to-video", owned_by: "lightricks" },
-    { id: "hunyuan-video", name: "Hunyuan Video", type: "text-to-video", owned_by: "tencent" },
+    { id: "google/veo-3/text-to-video", name: "Veo 3", type: "text-to-video", owned_by: "google" },
+    { id: "google/veo-3-fast/text-to-video", name: "Veo 3 Fast", type: "text-to-video", owned_by: "google" },
+    { id: "google/veo-3.1-fast/image-to-video", name: "Veo 3.1 Fast I2V", type: "image-to-video", owned_by: "google" },
+    { id: "google/veo-3.1/image-to-video", name: "Veo 3.1 I2V", type: "image-to-video", owned_by: "google" },
+    { id: "kling-v1.6-standard/text-to-video", name: "Kling 1.6 Standard", type: "text-to-video", owned_by: "klingai" },
+    { id: "kling-v1.6-pro/text-to-video", name: "Kling 1.6 Pro", type: "text-to-video", owned_by: "klingai" },
+    { id: "minimax-video-01/text-to-video", name: "MiniMax Hailuo", type: "text-to-video", owned_by: "minimax" },
+    { id: "luma/dream-machine/text-to-video", name: "Luma Dream Machine", type: "text-to-video", owned_by: "luma" },
+    { id: "wan-ai/wan-2.1/text-to-video", name: "WAN 2.1", type: "text-to-video", owned_by: "wan-ai" },
+    { id: "ltx-video/text-to-video", name: "LTX Video", type: "text-to-video", owned_by: "lightricks" },
   ];
 }
 

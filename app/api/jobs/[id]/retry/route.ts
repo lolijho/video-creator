@@ -72,17 +72,17 @@ export async function POST(
       where: { id: params.id },
       data: {
         status: "queued",
-        apiTaskId: result.task_id,
+        apiTaskId: result.request_id,
         errorMessage: null,
         retryCount: job.retryCount + 1,
       },
     });
 
-    await addPollingJob(job.id, result.task_id);
+    await addPollingJob(job.id, result.request_id);
 
     return NextResponse.json({
       jobId: job.id,
-      taskId: result.task_id,
+      taskId: result.request_id,
       status: "queued",
     });
   } catch (err) {

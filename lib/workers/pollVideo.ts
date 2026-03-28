@@ -1,7 +1,7 @@
 import { Worker, Job } from "bullmq";
 import { PrismaClient } from "@prisma/client";
 import { ApifreeClient } from "../apifree";
-import { saveVideoFromUrl, saveThumbnail } from "../storage";
+import { saveVideoFromUrl } from "../storage";
 import { decrypt } from "../crypto";
 import IORedis from "ioredis";
 
@@ -52,38 +52,33 @@ async function processPollJob(job: Job<PollJobData>): Promise<void> {
   const apiKey = await getApiKey();
   const client = new ApifreeClient(apiKey);
 
-  const status = await client.getTaskStatus(taskId);
+  // Step 2: Check status
+  const statusResult = await client.getTaskStatus(taskId);
 
-  if (status.status === "queued" || status.status === "processing") {
+  if (statusResult.status === "queued" || statusResult.status === "processing" || statusResult.status === "pending") {
     await prisma.videoJob.update({
       where: { id: jobId },
-      data: { status: status.status },
+      data: { status: statusResult.status === "pending" ? "queued" : statusResult.status },
     });
     // Throw to retry with backoff
-    throw new Error(`Still ${status.status}, will retry`);
+    throw new Error(`Still ${statusResult.status}, will retry`);
   }
 
-  if (status.status === "completed" && status.video_url) {
+  if (statusResult.status === "success" || statusResult.status === "completed") {
     const generationMs = Date.now() - startedAt;
 
-    let outputUrl = status.video_url;
+    // Step 3: Get result
+    const result = await client.getTaskResult(taskId);
+
+    let outputUrl = result.video_url;
     let fileSize = 0;
 
     try {
-      const saved = await saveVideoFromUrl(status.video_url, jobId);
+      const saved = await saveVideoFromUrl(result.video_url, jobId);
       outputUrl = saved.localPath;
       fileSize = saved.fileSize;
     } catch (err) {
       console.error("Failed to save video locally, using API URL:", err);
-    }
-
-    let thumbnailUrl = status.thumbnail_url || null;
-    if (thumbnailUrl) {
-      try {
-        thumbnailUrl = await saveThumbnail(thumbnailUrl, jobId);
-      } catch {
-        // Keep original URL
-      }
     }
 
     await prisma.videoJob.update({
@@ -91,8 +86,7 @@ async function processPollJob(job: Job<PollJobData>): Promise<void> {
       data: {
         status: "completed",
         outputUrl,
-        apiVideoUrl: status.video_url,
-        thumbnailUrl,
+        apiVideoUrl: result.video_url,
         generationMs,
         fileSizeBytes: fileSize || null,
       },
@@ -100,19 +94,19 @@ async function processPollJob(job: Job<PollJobData>): Promise<void> {
     return;
   }
 
-  if (status.status === "failed") {
+  if (statusResult.status === "failed" || statusResult.status === "error") {
     await prisma.videoJob.update({
       where: { id: jobId },
       data: {
         status: "failed",
-        errorMessage: status.error || "Generation failed",
+        errorMessage: "Generation failed",
       },
     });
     return;
   }
 
   // Unknown status, retry
-  throw new Error(`Unknown status: ${status.status}`);
+  throw new Error(`Unknown status: ${statusResult.status}`);
 }
 
 function startWorker() {
@@ -120,6 +114,10 @@ function startWorker() {
   const connection = new IORedis(redisUrl, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+  });
+
+  connection.on("error", (err) => {
+    console.warn("[Worker Redis] Connection error:", err.message);
   });
 
   const worker = new Worker("video-polling", processPollJob, {
@@ -137,7 +135,6 @@ function startWorker() {
 
   worker.on("failed", (job, err) => {
     if (job && job.attemptsMade < (job.opts.attempts || 360)) {
-      // Expected retry, don't log as error
       return;
     }
     console.error(`[Worker] Job ${job?.id} failed permanently:`, err.message);
@@ -151,7 +148,6 @@ function startWorker() {
   return worker;
 }
 
-// Auto-start when imported directly
 if (require.main === module) {
   startWorker();
 }
