@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model VideoJob {
+  id             String   @id @default(cuid())
+  type           String   // text2video | image2video | video2video
+  model          String
+  prompt         String
+  negativePrompt String?
+  parameters     Json
+  inputImageUrl  String?
+  inputVideoUrl  String?
+  outputUrl      String?
+  thumbnailUrl   String?
+  apiTaskId      String?
+  apiVideoUrl    String?
+  status         String   @default("queued")
+  errorMessage   String?
+  retryCount     Int      @default(0)
+  generationMs   Int?
+  fileSizeBytes  Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model AppSettings {
+  id              String   @id @default("main")
+  apifreeKeyEnc   String?
+  defaultT2VModel String   @default("veo-3-fast")
+  defaultI2VModel String   @default("veo-2")
+  defaultV2VModel String   @default("kling-v1.6-standard")
+  storageType     String   @default("local")
+  storagePath     String   @default("/app/storage")
+  s3Bucket        String?
+  s3Region        String?
+  s3Endpoint      String?
+  s3AccessKey     String?
+  s3SecretKeyEnc  String?
+  maxUploadMb     Int      @default(100)
+  updatedAt       DateTime @updatedAt
+}
+
+model CachedModel {
+  id       String   @id
+  name     String
+  type     Json
+  provider String?
+  metadata Json?
+  cachedAt DateTime @default(now())
+}
