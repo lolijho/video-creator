@@ -6,13 +6,20 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
-RUN npm ci && npx prisma generate
+RUN npm ci
+
+# Generate Prisma client (no DB connection needed)
+RUN npx prisma generate
 
 COPY . .
 
-# Force dummy DB for build - ignore any DATABASE_URL build arg
+# Build Next.js - unset any DATABASE_URL from build args, increase memory
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npm run build
+ARG DATABASE_URL
+RUN unset DATABASE_URL && \
+    export DATABASE_URL="postgresql://build:build@localhost:5432/build" && \
+    export NODE_OPTIONS="--max-old-space-size=4096" && \
+    npx next build
 
 ENV NODE_ENV=production
 ENV PORT=3000
