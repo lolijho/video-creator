@@ -4,14 +4,22 @@ const globalForRedis = globalThis as unknown as { redis: IORedis };
 
 function createRedisConnection(): IORedis {
   const url = process.env.REDIS_URL || "redis://localhost:6379";
-  return new IORedis(url, {
+  const conn = new IORedis(url, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    lazyConnect: true,
     retryStrategy(times: number) {
-      if (times > 10) return null;
-      return Math.min(times * 200, 5000);
+      if (times > 20) return null;
+      return Math.min(times * 500, 10000);
     },
   });
+
+  // Prevent unhandled error crashes
+  conn.on("error", (err) => {
+    console.warn("[Redis] Connection error:", err.message);
+  });
+
+  return conn;
 }
 
 export const redis = globalForRedis.redis || createRedisConnection();

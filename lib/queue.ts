@@ -1,27 +1,36 @@
 import { Queue } from "bullmq";
 import { createNewRedisConnection } from "./redis";
 
-const globalForQueue = globalThis as unknown as { videoQueue: Queue };
+let videoQueue: Queue | null = null;
 
-export const videoQueue =
-  globalForQueue.videoQueue ||
-  new Queue("video-polling", {
-    connection: createNewRedisConnection(),
-    defaultJobOptions: {
-      attempts: 360,
-      backoff: {
-        type: "fixed",
-        delay: 5000,
+function getQueue(): Queue | null {
+  if (videoQueue) return videoQueue;
+
+  try {
+    videoQueue = new Queue("video-polling", {
+      connection: createNewRedisConnection(),
+      defaultJobOptions: {
+        attempts: 360,
+        backoff: { type: "fixed", delay: 5000 },
+        removeOnComplete: { count: 100 },
+        removeOnFail: { count: 50 },
       },
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 50 },
-    },
-  });
-
-if (process.env.NODE_ENV !== "production") globalForQueue.videoQueue = videoQueue;
+    });
+    return videoQueue;
+  } catch (err) {
+    console.warn("[Queue] Failed to create queue:", (err as Error).message);
+    return null;
+  }
+}
 
 export async function addPollingJob(jobId: string, taskId: string) {
-  await videoQueue.add(
+  const queue = getQueue();
+  if (!queue) {
+    console.warn("[Queue] Queue not available, skipping polling job for", jobId);
+    return;
+  }
+
+  await queue.add(
     "poll-video",
     { jobId, taskId, startedAt: Date.now() },
     { jobId: `poll-${jobId}` }
