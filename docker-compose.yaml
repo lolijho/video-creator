@@ -6,7 +6,7 @@ services:
     volumes:
       - app_storage:/app/storage
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://videogen:changeme@postgres:5432/videogen}
+      - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4}
       - AUTH_USERNAME=${AUTH_USERNAME:-admin}
@@ -18,8 +18,6 @@ services:
       - NODE_ENV=production
     depends_on:
       redis:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -40,23 +38,6 @@ services:
       timeout: 5s
       retries: 5
 
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: videogen
-      POSTGRES_USER: videogen
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U videogen -d videogen"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-
 volumes:
   app_storage:
   redis_data:
-  postgres_data:
