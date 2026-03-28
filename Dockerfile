@@ -26,37 +26,29 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 # Create storage directory
 RUN mkdir -p /app/storage/videos /app/storage/thumbnails /app/storage/uploads
 
-# Copy full node_modules (needed for prisma CLI, bullmq worker, etc.)
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# 1) Copy standalone output first (includes server.js, .next/server, minimal node_modules)
+COPY --from=builder /app/.next/standalone ./
 
-# Copy prisma
+# 2) Copy static assets and public
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
+# 3) Overlay full node_modules on top (for prisma CLI, sharp, etc.)
+COPY --from=builder /app/node_modules ./node_modules
+
+# 4) Copy prisma schema (for db push)
 COPY --from=builder /app/prisma ./prisma
 
-# Copy Next.js standalone + static
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy worker source
-COPY --from=builder /app/lib ./lib
-
-# Ownership
-RUN chown -R nextjs:nodejs /app/storage /app/.next
-
-# Entrypoint script
+# 5) Entrypoint
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=30s \
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=60s \
   CMD wget -q --spider http://localhost:3000/api/health || exit 1
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["./docker-entrypoint.sh"]
