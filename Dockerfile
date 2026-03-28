@@ -14,7 +14,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="postgresql://x:x@localhost:5432/x"
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN ./node_modules/.bin/next build
+RUN ./node_modules/.bin/next build > /tmp/build.log 2>&1 || (cat /tmp/build.log && exit 1)
 # Unset so runtime uses the real one from Coolify
 ENV DATABASE_URL=""
 ENV NODE_OPTIONS=""
