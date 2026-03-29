@@ -342,6 +342,7 @@ function getHardcodedModels(): ApiModel[] {
     { id: "minimax-video-01/text-to-video", name: "MiniMax Hailuo", type: "text-to-video", owned_by: "minimax" },
     { id: "luma/dream-machine/text-to-video", name: "Luma Dream Machine", type: "text-to-video", owned_by: "luma" },
     { id: "wan-ai/wan-2.1/text-to-video", name: "WAN 2.1", type: "text-to-video", owned_by: "wan-ai" },
+    { id: "wan-ai/wan2.2-i2v-a14b/turbo", name: "WAN 2.2 A14B I2V Turbo", type: "image-to-video", owned_by: "wan-ai" },
     { id: "ltx-video/text-to-video", name: "LTX Video", type: "text-to-video", owned_by: "lightricks" },
   ];
 }

@@ -42,6 +42,8 @@ function getMetadataForModel(id: string): Partial<ModelMetadata> {
     return { maxDuration: 6, estimatedSeconds: 60, description: "MiniMax Hailuo" };
   if (lower.includes("luma") || lower.includes("dream"))
     return { maxDuration: 5, estimatedSeconds: 60, description: "Luma Dream Machine" };
+  if (lower.includes("wan2.2") || lower.includes("wan-2.2"))
+    return { maxDuration: 5, estimatedSeconds: 30, badge: "FAST", description: "WAN 2.2 A14B I2V Turbo - fastest open source I2V" };
   if (lower.includes("wan"))
     return { maxDuration: 5, estimatedSeconds: 45, badge: "OPEN", description: "WAN 2.1 open source" };
   if (lower.includes("ltx"))
@@ -188,6 +190,7 @@ function getHardcodedVideoModels(): VideoModel[] {
     { id: "kling-v1.6-pro/text-to-video", name: "Kling 1.6 Pro", types: ["text2video"], provider: "klingai" },
     { id: "minimax-video-01/text-to-video", name: "MiniMax Hailuo", types: ["text2video"], provider: "minimax" },
     { id: "wan-ai/wan-2.1/text-to-video", name: "WAN 2.1", types: ["text2video"], provider: "wan-ai" },
+    { id: "wan-ai/wan2.2-i2v-a14b/turbo", name: "WAN 2.2 A14B I2V Turbo", types: ["image2video"], provider: "wan-ai" },
     { id: "ltx-video/text-to-video", name: "LTX Video", types: ["text2video"], provider: "lightricks" },
   ];
 
