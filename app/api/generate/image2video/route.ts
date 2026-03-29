@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getApiKey } from "@/lib/api-key";
 import { createApifreeClient } from "@/lib/apifree";
-import { addPollingJob } from "@/lib/queue";
+
 import { imageToVideoSchema } from "@/lib/validators";
 import { saveUploadedFile } from "@/lib/storage";
 import sharp from "sharp";
@@ -93,8 +93,6 @@ export async function POST(request: Request) {
         status: "queued",
       },
     });
-
-    await addPollingJob(job.id, result.request_id);
 
     return NextResponse.json({
       jobId: job.id,

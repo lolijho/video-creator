@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getApiKey } from "@/lib/api-key";
 import { createApifreeClient } from "@/lib/apifree";
-import { addPollingJob } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
 
@@ -77,8 +76,6 @@ export async function POST(
         retryCount: job.retryCount + 1,
       },
     });
-
-    await addPollingJob(job.id, result.request_id);
 
     return NextResponse.json({
       jobId: job.id,
