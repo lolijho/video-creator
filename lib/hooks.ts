@@ -105,16 +105,16 @@ export function useActiveJobs() {
     queryKey: ["jobs", "active"],
     queryFn: async () => {
       const res = await fetch("/api/jobs?status=queued&limit=50");
-      if (!res.ok) throw new Error("Failed to fetch jobs");
+      if (!res.ok) return [];
       const queued = await res.json();
 
       const res2 = await fetch("/api/jobs?status=processing&limit=50");
-      if (!res2.ok) throw new Error("Failed to fetch jobs");
+      if (!res2.ok) return queued.jobs as VideoJob[];
       const processing = await res2.json();
 
       return [...queued.jobs, ...processing.jobs] as VideoJob[];
     },
-    refetchInterval: 5000,
+    refetchInterval: 3000,
   });
 }
 

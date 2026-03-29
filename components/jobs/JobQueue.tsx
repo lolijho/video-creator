@@ -1,8 +1,14 @@
 "use client";
 
-import { useActiveJobs } from "@/lib/hooks";
+import { useActiveJobs, useJob, type VideoJob } from "@/lib/hooks";
 import { JobCard } from "./JobCard";
 import { ListVideo } from "lucide-react";
+
+function ActiveJobPoller({ jobId }: { jobId: string }) {
+  // This hook polls /api/jobs/[id] every 5s, which checks apifree.ai status
+  useJob(jobId);
+  return null;
+}
 
 export function JobQueue() {
   const { data: jobs, isLoading } = useActiveJobs();
@@ -18,6 +24,11 @@ export function JobQueue() {
           </span>
         )}
       </div>
+
+      {/* Poll each active job individually for status updates */}
+      {jobs?.map((job) => (
+        <ActiveJobPoller key={`poll-${job.id}`} jobId={job.id} />
+      ))}
 
       <div className="flex-1 overflow-auto p-3 space-y-2">
         {isLoading ? (
