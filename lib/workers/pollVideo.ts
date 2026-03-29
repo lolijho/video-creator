@@ -55,12 +55,11 @@ async function processPollJob(job: Job<PollJobData>): Promise<void> {
   // Step 2: Check status
   const statusResult = await client.getTaskStatus(taskId);
 
-  if (statusResult.status === "queued" || statusResult.status === "processing" || statusResult.status === "pending") {
+  if (statusResult.status === "processing" || statusResult.status === "queued" || statusResult.status === "pending") {
     await prisma.videoJob.update({
       where: { id: jobId },
-      data: { status: statusResult.status === "pending" ? "queued" : statusResult.status },
+      data: { status: "processing" },
     });
-    // Throw to retry with backoff
     throw new Error(`Still ${statusResult.status}, will retry`);
   }
 

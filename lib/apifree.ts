@@ -112,7 +112,7 @@ export class ApifreeClient {
     if (params.negativePrompt) body.negative_prompt = params.negativePrompt;
     if (params.aspectRatio) body.aspect_ratio = params.aspectRatio;
     if (params.duration) body.duration = params.duration;
-    if (params.quality) body.resolution = params.quality === "hd" ? "1080p" : params.quality === "4k" ? "2160p" : "720p";
+    if (params.quality) body.resolution = params.quality === "hd" ? "720p" : params.quality === "4k" ? "720p" : "480p";
     if (params.seed !== undefined) body.seed = params.seed;
     if (params.withAudio !== undefined) body.with_audio = params.withAudio;
 
@@ -150,13 +150,13 @@ export class ApifreeClient {
 
     const body: Record<string, unknown> = {
       model: params.model,
-      image: params.imageData,
+      image_data: params.imageData,
     };
     if (params.prompt) body.prompt = params.prompt;
     if (params.motionPrompt) body.motion_prompt = params.motionPrompt;
     if (params.aspectRatio) body.aspect_ratio = params.aspectRatio;
     if (params.duration) body.duration = params.duration;
-    if (params.quality) body.resolution = params.quality === "hd" ? "1080p" : params.quality === "4k" ? "2160p" : "720p";
+    if (params.quality) body.resolution = params.quality === "hd" ? "720p" : params.quality === "4k" ? "720p" : "480p";
     if (params.seed !== undefined) body.seed = params.seed;
 
     const res = await this.fetchWithRetry(`${this.baseUrl}/video/submit`, {
@@ -220,7 +220,7 @@ export class ApifreeClient {
     if (this.isMock) {
       const createdTs = parseInt(requestId.split("_")[1] || "0");
       const elapsed = Date.now() - createdTs;
-      if (elapsed < 5000) return { status: "queued" };
+      if (elapsed < 5000) return { status: "processing" };
       if (elapsed < 15000) return { status: "processing" };
       return { status: "success" };
     }
@@ -257,8 +257,11 @@ export class ApifreeClient {
 
     const data = await res.json();
     const respData = data.resp_data || data;
-    const videoUrl = respData.video_url || respData.url ||
-      (respData.videos && respData.videos[0]?.url) || "";
+    // video_list is an array of URLs
+    const videoList = respData.video_list || respData.videos || [];
+    const videoUrl = (Array.isArray(videoList) && videoList.length > 0)
+      ? (typeof videoList[0] === "string" ? videoList[0] : videoList[0]?.url)
+      : respData.video_url || respData.url || "";
 
     if (!videoUrl) throw new Error("No video URL in result");
     return { video_url: videoUrl };
