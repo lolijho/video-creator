@@ -26,4 +26,4 @@ RUN mkdir -p /app/storage/videos /app/storage/thumbnails /app/storage/uploads
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "timeout 15 npx prisma db push --accept-data-loss 2>&1 || echo 'DB sync skipped'; exec ./node_modules/.bin/next start -p ${PORT:-3000}"]
+CMD ["sh", "-c", "timeout 15 npx prisma db push --accept-data-loss 2>&1 || echo 'DB sync skipped'; exec ./node_modules/.bin/next start -p ${PORT:-3000} -H 0.0.0.0"]
