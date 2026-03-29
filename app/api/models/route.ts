@@ -9,7 +9,12 @@ export async function GET(request: Request) {
   const type = searchParams.get("type");
 
   try {
-    const models = refresh ? await refreshModelsCache() : await getCachedModels();
+    let models = refresh ? await refreshModelsCache() : await getCachedModels();
+
+    // If no models returned, always fall back to hardcoded
+    if (!models || models.length === 0) {
+      models = await refreshModelsCache();
+    }
 
     const filtered = type
       ? models.filter((m) => m.types.includes(type))
@@ -17,9 +22,13 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ models: filtered });
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message },
-      { status: 500 }
-    );
+    console.error("Models route error:", err);
+    // Return hardcoded fallback even on error
+    const { getHardcodedFallback } = await import("@/lib/models-cache");
+    const fallback = getHardcodedFallback();
+    const filtered = type
+      ? fallback.filter((m) => m.types.includes(type))
+      : fallback;
+    return NextResponse.json({ models: filtered });
   }
 }

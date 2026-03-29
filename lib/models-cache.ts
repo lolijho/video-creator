@@ -180,6 +180,10 @@ export async function refreshModelsCache(): Promise<VideoModel[]> {
   }
 }
 
+export function getHardcodedFallback(): VideoModel[] {
+  return getHardcodedVideoModels();
+}
+
 function getHardcodedVideoModels(): VideoModel[] {
   const models = [
     { id: "google/veo-3/text-to-video", name: "Veo 3", types: ["text2video"], provider: "google" },
