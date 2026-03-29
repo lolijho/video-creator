@@ -74,8 +74,8 @@ async function pollActiveJobs() {
 
 export async function GET(request: Request) {
   try {
-    // Poll active jobs on each request
-    await pollActiveJobs();
+    // Fire-and-forget: poll active jobs in background, don't block response
+    pollActiveJobs().catch(() => {});
 
     const { searchParams } = new URL(request.url);
     const query = jobsQuerySchema.parse({
