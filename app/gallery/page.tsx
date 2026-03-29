@@ -9,6 +9,7 @@ const typeFilters = [
   { label: "Text to Video", value: "text2video" },
   { label: "Image to Video", value: "image2video" },
   { label: "Video Remodel", value: "video2video" },
+  { label: "Image Gen", value: "image" },
 ];
 
 export default function GalleryPage() {

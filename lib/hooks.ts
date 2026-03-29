@@ -199,6 +199,29 @@ export function useGenerateVideo2Video() {
   });
 }
 
+export function useGenerateImage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: Record<string, unknown>) => {
+      const res = await fetch("/api/generate/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Image generation failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+    },
+  });
+}
+
 // Gallery
 export function useGallery(filters?: { model?: string; type?: string; page?: number }) {
   return useQuery({

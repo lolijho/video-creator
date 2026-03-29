@@ -4,13 +4,15 @@ import { useAppStore } from "@/lib/store";
 import { TextToVideo } from "./TextToVideo";
 import { ImageToVideo } from "./ImageToVideo";
 import { VideoRemodel } from "./VideoRemodel";
+import { ImageGen } from "./ImageGen";
 import { cn } from "@/lib/utils";
-import { Type, Image, Film } from "lucide-react";
+import { Type, Image, Film, Camera } from "lucide-react";
 
 const tabs = [
   { id: "text2video" as const, label: "Text to Video", icon: Type },
   { id: "image2video" as const, label: "Image to Video", icon: Image },
   { id: "video2video" as const, label: "Video Remodel", icon: Film },
+  { id: "image" as const, label: "Image Gen", icon: Camera },
 ];
 
 export function GenerateWorkspace() {
@@ -46,6 +48,7 @@ export function GenerateWorkspace() {
       {activeTab === "text2video" && <TextToVideo />}
       {activeTab === "image2video" && <ImageToVideo />}
       {activeTab === "video2video" && <VideoRemodel />}
+      {activeTab === "image" && <ImageGen />}
     </div>
   );
 }

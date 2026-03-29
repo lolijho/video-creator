@@ -4,6 +4,10 @@ const MOCK_VIDEOS = [
   "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
 ];
 
+const MOCK_IMAGES = [
+  "https://placehold.co/1024x1024/1a1a2e/e0e0e0?text=Generated+Image",
+];
+
 interface SubmitResponse {
   request_id: string;
 }
@@ -268,6 +272,46 @@ export class ApifreeClient {
     return { video_url: videoUrl };
   }
 
+  async generateImage(params: {
+    model: string;
+    prompt: string;
+    size?: string;
+    quality?: string;
+    style?: string;
+    n?: number;
+  }): Promise<{ url: string }> {
+    if (this.isMock) {
+      // Simulate a short delay for mock mode
+      await new Promise((r) => setTimeout(r, 1500));
+      return { url: MOCK_IMAGES[0] };
+    }
+
+    const body: Record<string, unknown> = {
+      model: params.model,
+      prompt: params.prompt,
+      n: params.n || 1,
+    };
+    if (params.size) body.size = params.size;
+    if (params.quality) body.quality = params.quality;
+    if (params.style) body.style = params.style;
+
+    const res = await this.fetchWithRetry(`${this.baseUrl}/images/generations`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const url = data.data?.[0]?.url;
+    if (!url) throw new Error("No image URL in response");
+    return { url };
+  }
+
   async listModels(): Promise<ApiModel[]> {
     if (this.isMock) {
       return getHardcodedModels();
@@ -348,6 +392,9 @@ function getHardcodedModels(): ApiModel[] {
     { id: "wan-ai/wan-2.1/text-to-video", name: "WAN 2.1", type: "text-to-video", owned_by: "wan-ai" },
     { id: "wan-ai/wan2.2-i2v-a14b/turbo", name: "WAN 2.2 A14B I2V Turbo", type: "image-to-video", owned_by: "wan-ai" },
     { id: "ltx-video/text-to-video", name: "LTX Video", type: "text-to-video", owned_by: "lightricks" },
+    { id: "gpt-image-1", name: "GPT Image 1", type: "image", owned_by: "openai" },
+    { id: "dall-e-3", name: "DALL-E 3", type: "image", owned_by: "openai" },
+    { id: "flux-1.1-pro", name: "Flux 1.1 Pro", type: "image", owned_by: "black-forest-labs" },
   ];
 }
 

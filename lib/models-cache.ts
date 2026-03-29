@@ -50,6 +50,12 @@ function getMetadataForModel(id: string): Partial<ModelMetadata> {
     return { maxDuration: 5, estimatedSeconds: 30, badge: "FAST", description: "LTX ultra-fast" };
   if (lower.includes("hunyuan"))
     return { maxDuration: 5, estimatedSeconds: 90, description: "Tencent Hunyuan" };
+  if (lower.includes("gpt-image"))
+    return { maxDuration: 0, estimatedSeconds: 15, badge: "NEW", description: "OpenAI GPT Image 1" };
+  if (lower.includes("dall-e"))
+    return { maxDuration: 0, estimatedSeconds: 15, description: "OpenAI DALL-E 3" };
+  if (lower.includes("flux"))
+    return { maxDuration: 0, estimatedSeconds: 10, badge: "FAST", description: "Black Forest Labs Flux 1.1 Pro" };
   return {};
 }
 
@@ -69,6 +75,7 @@ function parseModelTypes(type: unknown): string[] {
   if (typeof type === "string") {
     const t = type.toLowerCase();
     const types: string[] = [];
+    if (t === "image") return ["image"];
     if (t.includes("text") || t.includes("t2v")) types.push("text2video");
     if (t.includes("image") || t.includes("i2v")) types.push("image2video");
     if (t.includes("video-to-video") || t.includes("v2v")) types.push("video2video");
@@ -78,13 +85,13 @@ function parseModelTypes(type: unknown): string[] {
   return ["text2video"];
 }
 
-function isVideoModel(model: { id: string; type?: unknown }): boolean {
-  // Check if model ID contains video-related keywords
-  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream/i.test(model.id)) return true;
+function isVideoOrImageModel(model: { id: string; type?: unknown }): boolean {
+  // Check if model ID contains video-related or image-generation keywords
+  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream|dall-e|gpt-image|flux/i.test(model.id)) return true;
 
   if (model.type) {
     const typeStr = typeof model.type === "string" ? model.type : JSON.stringify(model.type);
-    return /video|v2v|t2v|i2v/i.test(typeStr);
+    return /video|v2v|t2v|i2v|image/i.test(typeStr);
   }
 
   return /video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx/i.test(model.id);
@@ -142,7 +149,7 @@ export async function refreshModelsCache(): Promise<VideoModel[]> {
   try {
     const client = createApifreeClient(apiKey);
     const allModels = await client.listModels();
-    const videoModels = allModels.filter(isVideoModel);
+    const videoModels = allModels.filter(isVideoOrImageModel);
 
     const apiModels: VideoModel[] = videoModels.map((m) => {
       const types = parseModelTypes(m.type);
@@ -210,6 +217,9 @@ function getHardcodedVideoModels(): VideoModel[] {
     { id: "wan-ai/wan-2.1/text-to-video", name: "WAN 2.1", types: ["text2video"], provider: "wan-ai" },
     { id: "wan-ai/wan2.2-i2v-a14b/turbo", name: "WAN 2.2 A14B I2V Turbo", types: ["image2video"], provider: "wan-ai" },
     { id: "ltx-video/text-to-video", name: "LTX Video", types: ["text2video"], provider: "lightricks" },
+    { id: "gpt-image-1", name: "GPT Image 1", types: ["image"], provider: "openai" },
+    { id: "dall-e-3", name: "DALL-E 3", types: ["image"], provider: "openai" },
+    { id: "flux-1.1-pro", name: "Flux 1.1 Pro", types: ["image"], provider: "black-forest-labs" },
   ];
 
   return models.map((m) => ({

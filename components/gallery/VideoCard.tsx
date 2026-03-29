@@ -17,6 +17,9 @@ export function VideoCard({ video }: VideoCardProps) {
   const deleteJob = useDeleteJob();
   const retryJob = useRetryJob();
 
+  const videoSrc = video.outputUrl || video.apiVideoUrl;
+  const isImage = video.type === "image";
+
   const handleMouseEnter = () => {
     setIsHovered(true);
     videoRef.current?.play().catch(() => {});
@@ -34,7 +37,7 @@ export function VideoCard({ video }: VideoCardProps) {
     if (video.outputUrl) {
       const a = document.createElement("a");
       a.href = video.outputUrl;
-      a.download = `${video.id}.mp4`;
+      a.download = isImage ? `${video.id}.png` : `${video.id}.mp4`;
       a.click();
     }
   };
@@ -48,8 +51,6 @@ export function VideoCard({ video }: VideoCardProps) {
     }
   };
 
-  const videoSrc = video.outputUrl || video.apiVideoUrl;
-
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -57,9 +58,15 @@ export function VideoCard({ video }: VideoCardProps) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Video / Thumbnail */}
-      <div className="aspect-video bg-bg-elevated relative overflow-hidden">
-        {videoSrc ? (
+      {/* Video / Thumbnail / Image */}
+      <div className={`${isImage ? "aspect-square" : "aspect-video"} bg-bg-elevated relative overflow-hidden`}>
+        {isImage && videoSrc ? (
+          <img
+            src={videoSrc}
+            alt={video.prompt?.slice(0, 80) || "Generated image"}
+            className="w-full h-full object-cover"
+          />
+        ) : videoSrc ? (
           <video
             ref={videoRef}
             src={videoSrc}

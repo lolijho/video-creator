@@ -54,6 +54,15 @@ export const jobsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+export const imageGenSchema = z.object({
+  model: z.string().min(1, "Model is required"),
+  prompt: z.string().min(1, "Prompt is required").max(2000),
+  resolution: z.enum(["1024x1024", "1024x1792", "1792x1024"]).default("1024x1024"),
+  quality: z.enum(["standard", "hd"]).default("standard"),
+  style: z.enum(["natural", "vivid"]).default("vivid"),
+});
+
+export type ImageGenInput = z.infer<typeof imageGenSchema>;
 export type TextToVideoInput = z.infer<typeof textToVideoSchema>;
 export type ImageToVideoInput = z.infer<typeof imageToVideoSchema>;
 export type VideoToVideoInput = z.infer<typeof videoToVideoSchema>;
