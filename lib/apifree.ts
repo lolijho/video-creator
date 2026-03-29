@@ -150,6 +150,7 @@ export class ApifreeClient {
 
     const body: Record<string, unknown> = {
       model: params.model,
+      image: params.imageData,
       image_data: params.imageData,
     };
     if (params.prompt) body.prompt = params.prompt;
