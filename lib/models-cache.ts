@@ -91,24 +91,29 @@ function isVideoModel(model: { id: string; type?: unknown }): boolean {
 }
 
 export async function getCachedModels(): Promise<VideoModel[]> {
-  const cached = await prisma.cachedModel.findMany();
-  const isFresh =
-    cached.length > 0 &&
-    cached[0].cachedAt.getTime() > Date.now() - CACHE_TTL_MS;
+  try {
+    const cached = await prisma.cachedModel.findMany();
+    const isFresh =
+      cached.length > 0 &&
+      cached[0].cachedAt.getTime() > Date.now() - CACHE_TTL_MS;
 
-  if (isFresh) {
-    return cached.map((m) => ({
-      id: m.id,
-      name: m.name,
-      types: m.type as string[],
-      provider: m.provider || "unknown",
-      metadata: {
-        ...DEFAULT_METADATA,
-        ...getMetadataForModel(m.id),
-        supportedTypes: m.type as string[],
-        ...(m.metadata as Record<string, unknown> || {}),
-      },
-    }));
+    if (isFresh) {
+      return cached.map((m) => ({
+        id: m.id,
+        name: m.name,
+        types: m.type as string[],
+        provider: m.provider || "unknown",
+        metadata: {
+          ...DEFAULT_METADATA,
+          ...getMetadataForModel(m.id),
+          supportedTypes: m.type as string[],
+          ...(m.metadata as Record<string, unknown> || {}),
+        },
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to read cached models:", err);
+    return getHardcodedVideoModels();
   }
 
   return refreshModelsCache();
@@ -139,7 +144,7 @@ export async function refreshModelsCache(): Promise<VideoModel[]> {
     const allModels = await client.listModels();
     const videoModels = allModels.filter(isVideoModel);
 
-    const models: VideoModel[] = videoModels.map((m) => {
+    const apiModels: VideoModel[] = videoModels.map((m) => {
       const types = parseModelTypes(m.type);
       const meta = getMetadataForModel(m.id);
 
@@ -156,24 +161,33 @@ export async function refreshModelsCache(): Promise<VideoModel[]> {
       };
     });
 
-    // Update cache
-    await prisma.$transaction([
-      prisma.cachedModel.deleteMany(),
-      ...models.map((m) =>
-        prisma.cachedModel.create({
-          data: {
-            id: m.id,
-            name: m.name,
-            type: m.types,
-            provider: m.provider,
-            metadata: JSON.parse(JSON.stringify(m.metadata)),
-            cachedAt: new Date(),
-          },
-        })
-      ),
-    ]);
+    // Merge with hardcoded models (add any missing ones)
+    const hardcoded = getHardcodedVideoModels();
+    const apiIds = new Set(apiModels.map((m) => m.id));
+    const merged = [...apiModels, ...hardcoded.filter((h) => !apiIds.has(h.id))];
 
-    return models;
+    // Update cache
+    try {
+      await prisma.$transaction([
+        prisma.cachedModel.deleteMany(),
+        ...merged.map((m) =>
+          prisma.cachedModel.create({
+            data: {
+              id: m.id,
+              name: m.name,
+              type: m.types,
+              provider: m.provider,
+              metadata: JSON.parse(JSON.stringify(m.metadata)),
+              cachedAt: new Date(),
+            },
+          })
+        ),
+      ]);
+    } catch (cacheErr) {
+      console.error("Failed to cache models:", cacheErr);
+    }
+
+    return merged;
   } catch (err) {
     console.error("Failed to fetch models from API:", err);
     return getHardcodedVideoModels();
