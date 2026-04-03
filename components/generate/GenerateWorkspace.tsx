@@ -6,8 +6,9 @@ import { ImageToVideo } from "./ImageToVideo";
 import { VideoRemodel } from "./VideoRemodel";
 import { ImageGen } from "./ImageGen";
 import { MultiScene } from "./MultiScene";
+import { AvatarVideo } from "./AvatarVideo";
 import { cn } from "@/lib/utils";
-import { Type, Image, Film, Camera, Clapperboard } from "lucide-react";
+import { Type, Image, Film, Camera, Clapperboard, User } from "lucide-react";
 
 const tabs = [
   { id: "text2video" as const, label: "Text to Video", icon: Type },
@@ -15,6 +16,7 @@ const tabs = [
   { id: "video2video" as const, label: "Video Remodel", icon: Film },
   { id: "image" as const, label: "Image Gen", icon: Camera },
   { id: "multiscene" as const, label: "Multi-Scene", icon: Clapperboard },
+  { id: "avatar" as const, label: "Avatar", icon: User },
 ];
 
 export function GenerateWorkspace() {
@@ -52,6 +54,7 @@ export function GenerateWorkspace() {
       {activeTab === "video2video" && <VideoRemodel />}
       {activeTab === "image" && <ImageGen />}
       {activeTab === "multiscene" && <MultiScene />}
+      {activeTab === "avatar" && <AvatarVideo />}
     </div>
   );
 }

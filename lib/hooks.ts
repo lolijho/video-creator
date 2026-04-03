@@ -222,6 +222,28 @@ export function useGenerateImage() {
   });
 }
 
+// Avatar
+export function useGenerateAvatar() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await fetch("/api/generate/avatar", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+  });
+}
+
 // Gallery
 export function useGallery(filters?: { model?: string; type?: string; page?: number }) {
   return useQuery({

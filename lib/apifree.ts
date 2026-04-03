@@ -221,6 +221,40 @@ export class ApifreeClient {
     return { request_id: requestId };
   }
 
+  async submitAvatarVideo(params: {
+    model: string;
+    firstFrameImage: string;
+    audios: string[];
+    prompt: string;
+  }): Promise<{ request_id: string }> {
+    if (this.isMock) {
+      return { request_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` };
+    }
+
+    const body = {
+      model: params.model,
+      first_frame_image: params.firstFrameImage,
+      audios: params.audios,
+      prompt: params.prompt,
+    };
+
+    const res = await this.fetchWithRetry(`${this.baseUrl}/video/submit`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const requestId = data.resp_data?.request_id || data.request_id || data.id;
+    if (!requestId) throw new Error("No request_id in response");
+    return { request_id: requestId };
+  }
+
   async getTaskStatus(requestId: string): Promise<{ status: string }> {
     if (this.isMock) {
       const createdTs = parseInt(requestId.split("_")[1] || "0");
@@ -458,6 +492,7 @@ function getHardcodedModels(): ApiModel[] {
     { id: "dall-e-3", name: "DALL-E 3", type: "image", owned_by: "openai" },
     { id: "flux-1.1-pro", name: "Flux 1.1 Pro", type: "image", owned_by: "black-forest-labs" },
     { id: "google/nano-banana-pro/edit", name: "Nano Banana Pro Edit", type: "image-edit", owned_by: "google" },
+    { id: "skywork-ai/skyreels-v3/pro/single-avatar", name: "SkyReels V3 Pro Avatar", type: "audio-to-video", owned_by: "skywork" },
   ];
 }
 

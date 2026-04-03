@@ -223,6 +223,7 @@ function getHardcodedVideoModels(): VideoModel[] {
     { id: "dall-e-3", name: "DALL-E 3", types: ["image"], provider: "openai" },
     { id: "flux-1.1-pro", name: "Flux 1.1 Pro", types: ["image"], provider: "black-forest-labs" },
     { id: "google/nano-banana-pro/edit", name: "Nano Banana Pro Edit", types: ["image"], provider: "google" },
+    { id: "skywork-ai/skyreels-v3/pro/single-avatar", name: "SkyReels V3 Pro Avatar", types: ["avatar"], provider: "skywork" },
   ];
 
   return models.map((m) => ({
