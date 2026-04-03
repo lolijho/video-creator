@@ -27,9 +27,9 @@ const MODEL_METADATA: Record<string, Partial<ModelMetadata>> = {};
 function getMetadataForModel(id: string): Partial<ModelMetadata> {
   const lower = id.toLowerCase();
   if (lower.includes("veo-3") && lower.includes("fast") && lower.includes("image"))
-    return { maxDuration: 8, supportsAudio: false, estimatedSeconds: 45, badge: "FAST", description: "Veo 3.1 Fast image-to-video" };
+    return { maxDuration: 8, supportsAudio: false, estimatedSeconds: 45, badge: "FAST", description: "Veo 3.1 Fast I2V - 720p/1080p, 4-8s", aspectRatios: ["16:9", "9:16"] };
   if (lower.includes("veo-3.1") && !lower.includes("fast") && lower.includes("image"))
-    return { maxDuration: 8, supportsAudio: false, estimatedSeconds: 120, badge: "HD", description: "Veo 3.1 I2V - Google's best quality, 720p/1080p" };
+    return { maxDuration: 8, supportsAudio: false, estimatedSeconds: 120, badge: "HD", description: "Veo 3.1 I2V - Google's best, 720p/1080p, 4-8s", aspectRatios: ["16:9", "9:16"] };
   if (lower.includes("veo-3") && lower.includes("fast"))
     return { maxDuration: 8, supportsAudio: true, estimatedSeconds: 45, badge: "FAST", description: "Veo 3 Fast text-to-video" };
   if (lower.includes("veo-3"))
