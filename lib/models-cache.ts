@@ -58,6 +58,8 @@ function getMetadataForModel(id: string): Partial<ModelMetadata> {
     return { maxDuration: 0, estimatedSeconds: 15, description: "OpenAI DALL-E 3" };
   if (lower.includes("flux"))
     return { maxDuration: 0, estimatedSeconds: 10, badge: "FAST", description: "Black Forest Labs Flux 1.1 Pro" };
+  if (lower.includes("skyreels") || lower.includes("avatar"))
+    return { maxDuration: 200, estimatedSeconds: 120, badge: "PRO", description: "SkyReels V3 - talking avatar from audio+image, 1080p up to 200s" };
   return {};
 }
 
@@ -78,6 +80,7 @@ function parseModelTypes(type: unknown): string[] {
     const t = type.toLowerCase();
     const types: string[] = [];
     if (t === "image") return ["image"];
+    if (t.includes("audio-to-video") || t.includes("avatar")) return ["avatar"];
     if (t.includes("text") || t.includes("t2v")) types.push("text2video");
     if (t.includes("image") || t.includes("i2v")) types.push("image2video");
     if (t.includes("video-to-video") || t.includes("v2v")) types.push("video2video");
@@ -89,11 +92,11 @@ function parseModelTypes(type: unknown): string[] {
 
 function isVideoOrImageModel(model: { id: string; type?: unknown }): boolean {
   // Check if model ID contains video-related or image-generation keywords
-  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream|dall-e|gpt-image|flux/i.test(model.id)) return true;
+  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream|dall-e|gpt-image|flux|skyreels|avatar/i.test(model.id)) return true;
 
   if (model.type) {
     const typeStr = typeof model.type === "string" ? model.type : JSON.stringify(model.type);
-    return /video|v2v|t2v|i2v|image/i.test(typeStr);
+    return /video|v2v|t2v|i2v|image|avatar|audio/i.test(typeStr);
   }
 
   return /video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx/i.test(model.id);
