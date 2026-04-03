@@ -312,6 +312,68 @@ export class ApifreeClient {
     return { url };
   }
 
+  async submitImage(params: {
+    model: string;
+    prompt: string;
+    image?: string;
+    imageUrls?: string[];
+    aspectRatio?: string;
+    resolution?: string;
+  }): Promise<{ request_id: string }> {
+    if (this.isMock) {
+      return { request_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` };
+    }
+
+    const body: Record<string, unknown> = {
+      model: params.model,
+      prompt: params.prompt,
+    };
+    if (params.image) body.image = params.image;
+    if (params.imageUrls) body.image_urls = params.imageUrls;
+    if (params.aspectRatio) body.aspect_ratio = params.aspectRatio;
+    if (params.resolution) body.resolution = params.resolution;
+
+    const res = await this.fetchWithRetry(`${this.baseUrl}/image/submit`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const requestId = data.resp_data?.request_id || data.request_id;
+    if (!requestId) throw new Error("No request_id in response");
+    return { request_id: requestId };
+  }
+
+  async getImageResult(requestId: string): Promise<{ status: string; imageUrl?: string }> {
+    if (this.isMock) {
+      return { status: "success", imageUrl: "https://picsum.photos/1024/1024" };
+    }
+
+    const res = await this.fetchWithRetry(
+      `${this.baseUrl}/image/${requestId}/result`,
+      { method: "GET", headers: this.headers() }
+    );
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const respData = data.resp_data || data;
+    const status = respData.status || "processing";
+    const imageList = respData.image_list || [];
+    const imageUrl = imageList.length > 0 ? imageList[0] : undefined;
+
+    return { status, imageUrl };
+  }
+
   async listModels(): Promise<ApiModel[]> {
     if (this.isMock) {
       return getHardcodedModels();
@@ -395,6 +457,7 @@ function getHardcodedModels(): ApiModel[] {
     { id: "gpt-image-1", name: "GPT Image 1", type: "image", owned_by: "openai" },
     { id: "dall-e-3", name: "DALL-E 3", type: "image", owned_by: "openai" },
     { id: "flux-1.1-pro", name: "Flux 1.1 Pro", type: "image", owned_by: "black-forest-labs" },
+    { id: "google/nano-banana-pro/edit", name: "Nano Banana Pro Edit", type: "image-edit", owned_by: "google" },
   ];
 }
 

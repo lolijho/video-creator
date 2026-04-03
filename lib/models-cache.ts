@@ -46,6 +46,8 @@ function getMetadataForModel(id: string): Partial<ModelMetadata> {
     return { maxDuration: 5, estimatedSeconds: 30, badge: "FAST", description: "WAN 2.2 A14B I2V Turbo - fastest open source I2V" };
   if (lower.includes("wan"))
     return { maxDuration: 5, estimatedSeconds: 45, badge: "OPEN", description: "WAN 2.1 open source" };
+  if (lower.includes("nano-banana") || lower.includes("banana"))
+    return { maxDuration: 0, estimatedSeconds: 10, badge: "EDIT", description: "Nano Banana Pro - fast AI image editing, 1K/2K/4K" };
   if (lower.includes("ltx"))
     return { maxDuration: 5, estimatedSeconds: 30, badge: "FAST", description: "LTX ultra-fast" };
   if (lower.includes("hunyuan"))
@@ -220,6 +222,7 @@ function getHardcodedVideoModels(): VideoModel[] {
     { id: "gpt-image-1", name: "GPT Image 1", types: ["image"], provider: "openai" },
     { id: "dall-e-3", name: "DALL-E 3", types: ["image"], provider: "openai" },
     { id: "flux-1.1-pro", name: "Flux 1.1 Pro", types: ["image"], provider: "black-forest-labs" },
+    { id: "google/nano-banana-pro/edit", name: "Nano Banana Pro Edit", types: ["image"], provider: "google" },
   ];
 
   return models.map((m) => ({
