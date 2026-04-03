@@ -272,6 +272,39 @@ export function useSaveSettings() {
   });
 }
 
+// Multi-Scene
+export function useSplitScenes() {
+  return useMutation({
+    mutationFn: async (params: { prompt: string; numScenes?: number }) => {
+      const res = await fetch("/api/split-scenes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed to split scenes");
+      return res.json() as Promise<{ scenes: Array<{ sceneNumber: number; prompt: string; duration: number }> }>;
+    },
+  });
+}
+
+export function useGenerateMultiScene() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { model: string; scenes: Array<{ prompt: string; duration: number }>; aspectRatio: string; quality: string }) => {
+      const res = await fetch("/api/generate/multiscene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+  });
+}
+
 // Enhance Prompt
 export function useEnhancePrompt() {
   return useMutation({

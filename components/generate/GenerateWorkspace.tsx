@@ -5,14 +5,16 @@ import { TextToVideo } from "./TextToVideo";
 import { ImageToVideo } from "./ImageToVideo";
 import { VideoRemodel } from "./VideoRemodel";
 import { ImageGen } from "./ImageGen";
+import { MultiScene } from "./MultiScene";
 import { cn } from "@/lib/utils";
-import { Type, Image, Film, Camera } from "lucide-react";
+import { Type, Image, Film, Camera, Clapperboard } from "lucide-react";
 
 const tabs = [
   { id: "text2video" as const, label: "Text to Video", icon: Type },
   { id: "image2video" as const, label: "Image to Video", icon: Image },
   { id: "video2video" as const, label: "Video Remodel", icon: Film },
   { id: "image" as const, label: "Image Gen", icon: Camera },
+  { id: "multiscene" as const, label: "Multi-Scene", icon: Clapperboard },
 ];
 
 export function GenerateWorkspace() {
@@ -49,6 +51,7 @@ export function GenerateWorkspace() {
       {activeTab === "image2video" && <ImageToVideo />}
       {activeTab === "video2video" && <VideoRemodel />}
       {activeTab === "image" && <ImageGen />}
+      {activeTab === "multiscene" && <MultiScene />}
     </div>
   );
 }

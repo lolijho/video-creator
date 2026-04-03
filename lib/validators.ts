@@ -63,6 +63,24 @@ export const imageGenSchema = z.object({
 });
 
 export type ImageGenInput = z.infer<typeof imageGenSchema>;
+export const splitScenesSchema = z.object({
+  prompt: z.string().min(10).max(5000),
+  numScenes: z.number().int().min(2).max(10).default(4),
+});
+
+export const multiSceneSchema = z.object({
+  model: z.string().min(1),
+  scenes: z.array(z.object({
+    prompt: z.string().min(1).max(2000),
+    duration: z.number().min(2).max(10).default(5),
+  })).min(2).max(10),
+  aspectRatio: z.enum(["16:9", "9:16", "1:1"]).default("16:9"),
+  quality: z.enum(["standard", "hd"]).default("standard"),
+});
+
+export type SplitScenesInput = z.infer<typeof splitScenesSchema>;
+export type MultiSceneInput = z.infer<typeof multiSceneSchema>;
+
 export type TextToVideoInput = z.infer<typeof textToVideoSchema>;
 export type ImageToVideoInput = z.infer<typeof imageToVideoSchema>;
 export type VideoToVideoInput = z.infer<typeof videoToVideoSchema>;
