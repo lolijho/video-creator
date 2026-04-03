@@ -29,6 +29,8 @@ const badgeStyles: Record<string, { bg: string; text: string; icon: typeof Zap }
   NEW: { bg: "bg-accent-green/15", text: "text-accent-green", icon: Star },
   OPEN: { bg: "bg-emerald-500/15", text: "text-emerald-400", icon: Star },
   I2V: { bg: "bg-purple-500/15", text: "text-purple-400", icon: Star },
+  EDIT: { bg: "bg-accent/15", text: "text-accent", icon: Star },
+  TTS: { bg: "bg-accent-cyan/15", text: "text-accent-cyan", icon: Star },
 };
 
 export function ModelCard({ model, isSelected, onSelect }: ModelCardProps) {

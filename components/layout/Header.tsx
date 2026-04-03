@@ -25,7 +25,7 @@ export function Header() {
       <div className="flex items-center gap-4">
         <h1 className="text-lg font-semibold text-txt-primary">AI Video Generator</h1>
         {!settings?.hasApiKey && (
-          <div className="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-medium">
+          <div className="px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-medium">
             API Key Required
           </div>
         )}

@@ -11,27 +11,27 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          primary: "#080810",
-          secondary: "#10101c",
-          card: "#18182a",
-          elevated: "#202035",
+          primary: "#1a1c18",
+          secondary: "#252720",
+          card: "#2e302a",
+          elevated: "#3b3c36",
         },
         accent: {
-          DEFAULT: "#7c6dfa",
-          glow: "#9d91fc",
-          cyan: "#00d4ff",
-          green: "#00e5a0",
+          DEFAULT: "#E75B12",
+          glow: "#F47A3E",
+          cyan: "#21888F",
+          green: "#2BA68F",
         },
         txt: {
-          primary: "#f0f0f8",
-          secondary: "#8888a8",
-          muted: "#505070",
+          primary: "#E6D2B5",
+          secondary: "#B4B8B0",
+          muted: "#7A7D76",
         },
         border: {
-          DEFAULT: "rgba(255,255,255,0.07)",
-          hover: "rgba(255,255,255,0.14)",
+          DEFAULT: "rgba(230,210,181,0.10)",
+          hover: "rgba(230,210,181,0.20)",
         },
-        glass: "rgba(255,255,255,0.04)",
+        glass: "rgba(230,210,181,0.04)",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
@@ -43,8 +43,8 @@ const config: Config = {
       },
       keyframes: {
         glow: {
-          "0%": { boxShadow: "0 0 5px rgba(124, 109, 250, 0.2)" },
-          "100%": { boxShadow: "0 0 20px rgba(124, 109, 250, 0.4)" },
+          "0%": { boxShadow: "0 0 5px rgba(231, 91, 18, 0.2)" },
+          "100%": { boxShadow: "0 0 20px rgba(231, 91, 18, 0.4)" },
         },
       },
     },
