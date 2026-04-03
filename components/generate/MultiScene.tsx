@@ -14,6 +14,9 @@ import {
   Play,
   CheckCircle2,
   AlertCircle,
+  GripVertical,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -28,6 +31,7 @@ interface Scene {
 interface SceneJob {
   jobId: string;
   sceneNumber: number;
+  taskId: string;
 }
 
 function SceneProgress({ jobId, sceneNumber }: { jobId: string; sceneNumber: number }) {
@@ -35,13 +39,13 @@ function SceneProgress({ jobId, sceneNumber }: { jobId: string; sceneNumber: num
   const status = job?.status || "queued";
 
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-lg bg-bg-elevated">
+    <div className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-bg-elevated">
       <span className="text-xs font-medium text-txt-muted w-16">Scene {sceneNumber}</span>
       <div className="flex-1 h-1.5 bg-bg-card rounded-full overflow-hidden">
         <motion.div
           className={cn(
             "h-full rounded-full",
-            status === "completed" ? "bg-accent-green" :
+            status === "completed" ? "bg-green-500" :
             status === "failed" ? "bg-red-500" :
             "bg-accent"
           )}
@@ -54,25 +58,52 @@ function SceneProgress({ jobId, sceneNumber }: { jobId: string; sceneNumber: num
           transition={{ duration: 0.5 }}
         />
       </div>
-      <div className="flex items-center gap-1.5 w-24">
+      <div className="flex items-center gap-1.5 w-28 justify-end">
         {status === "completed" ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-accent-green" />
+          <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
         ) : status === "failed" ? (
           <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+        ) : status === "processing" ? (
+          <Loader2 className="w-3.5 h-3.5 text-amber-400 animate-spin" />
         ) : (
-          <Loader2 className="w-3.5 h-3.5 text-accent animate-spin" />
+          <Clock className="w-3.5 h-3.5 text-txt-muted" />
         )}
         <span className={cn(
           "text-xs font-medium capitalize",
-          status === "completed" ? "text-accent-green" :
+          status === "completed" ? "text-green-500" :
           status === "failed" ? "text-red-500" :
-          "text-accent"
+          status === "processing" ? "text-amber-400" :
+          "text-txt-muted"
         )}>
           {status}
         </span>
+        {status === "completed" && job?.outputUrl && (
+          <a
+            href={job.outputUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-1 text-accent hover:text-accent-glow transition-colors"
+            title="View video"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        )}
       </div>
     </div>
   );
+}
+
+function useSceneJobStatuses(sceneJobs: SceneJob[]) {
+  // Query each job individually to track aggregate status
+  const jobs = sceneJobs.map((sj) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { data } = useJob(sj.jobId);
+    return { sceneNumber: sj.sceneNumber, status: data?.status || "queued", outputUrl: data?.outputUrl };
+  });
+  const allCompleted = jobs.length > 0 && jobs.every((j) => j.status === "completed");
+  const anyFailed = jobs.some((j) => j.status === "failed");
+  const completedCount = jobs.filter((j) => j.status === "completed").length;
+  return { jobs, allCompleted, anyFailed, completedCount };
 }
 
 export function MultiScene() {
@@ -214,43 +245,50 @@ export function MultiScene() {
       {scenes.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-txt-secondary">Scenes</h3>
-          <AnimatePresence>
+          <AnimatePresence mode="popLayout">
             {scenes.map((scene, index) => (
               <motion.div
-                key={scene.sceneNumber}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                key={`scene-${index}`}
+                layout
+                initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.97 }}
+                transition={{ duration: 0.2 }}
                 className="glass-card p-4 space-y-2"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="w-4 h-4 text-txt-muted/30 cursor-grab" />
                     <span className="text-xs font-bold text-accent bg-accent/10 px-2 py-1 rounded-md">
                       Scene {index + 1}
                     </span>
                     <select
                       value={scene.duration}
                       onChange={(e) => updateDuration(index, Number(e.target.value))}
-                      className="bg-bg-elevated border border-border rounded-md px-2 py-1 text-xs text-txt-secondary focus:outline-none"
+                      disabled={isGenerating}
+                      className="bg-bg-elevated border border-border rounded-md px-2 py-1 text-xs text-txt-secondary focus:outline-none disabled:opacity-50"
                     >
-                      {[3, 4, 5, 6, 8, 10].map((d) => (
+                      {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((d) => (
                         <option key={d} value={d}>{d}s</option>
                       ))}
                     </select>
                   </div>
                   <button
                     onClick={() => removeScene(index)}
-                    className="p-1 rounded-md text-txt-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    disabled={isGenerating || scenes.length <= 2}
+                    className="p-1.5 rounded-md text-txt-muted hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Delete scene"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <textarea
                   value={scene.prompt}
-                  onChange={(e) => updateScene(index, e.target.value)}
+                  onChange={(e) => updateScene(index, e.target.value.slice(0, 2000))}
                   rows={2}
-                  className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-xs font-mono text-txt-primary placeholder:text-txt-muted resize-none focus:outline-none focus:border-accent/50"
-                  placeholder="Describe this scene..."
+                  disabled={isGenerating}
+                  className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-xs font-mono text-txt-primary placeholder:text-txt-muted resize-none focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all disabled:opacity-50"
+                  placeholder={`Describe scene ${index + 1}...`}
                 />
               </motion.div>
             ))}
@@ -317,39 +355,113 @@ export function MultiScene() {
           </div>
 
           {/* Generate Button */}
-          <button
-            onClick={handleGenerate}
-            disabled={generateMulti.isPending || isGenerating}
-            className="w-full py-3 rounded-xl bg-accent hover:bg-accent-glow text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-accent"
-          >
-            {generateMulti.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Clapperboard className="w-4 h-4" />
-            )}
-            {generateMulti.isPending
-              ? "Submitting..."
-              : `Generate ${scenes.length} Scenes (~${totalDuration}s video)`}
-          </button>
+          {sceneJobs.length === 0 && (
+            <button
+              onClick={handleGenerate}
+              disabled={generateMulti.isPending || isGenerating || scenes.length < 2}
+              className="w-full py-3 rounded-xl bg-accent hover:bg-accent-glow text-white font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 glow-accent"
+            >
+              {generateMulti.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Clapperboard className="w-4 h-4" />
+              )}
+              {generateMulti.isPending
+                ? "Submitting scenes..."
+                : `Generate All ${scenes.length} Scenes (~${totalDuration}s video)`}
+            </button>
+          )}
         </>
       )}
 
       {/* Scene Progress */}
       {sceneJobs.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-txt-secondary flex items-center gap-2">
-            <Play className="w-4 h-4 text-accent" />
-            Generation Progress
-          </h3>
-          {sceneJobs.map((sj) => (
-            <SceneProgress
-              key={sj.jobId}
-              jobId={sj.jobId}
-              sceneNumber={sj.sceneNumber}
-            />
-          ))}
-        </div>
+        <SceneProgressPanel sceneJobs={sceneJobs} totalDuration={totalDuration} />
       )}
     </div>
+  );
+}
+
+function SceneProgressPanel({
+  sceneJobs,
+  totalDuration,
+}: {
+  sceneJobs: SceneJob[];
+  totalDuration: number;
+}) {
+  const { allCompleted, anyFailed, completedCount, jobs } = useSceneJobStatuses(sceneJobs);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-5 space-y-3"
+    >
+      <h3 className="text-sm font-medium text-txt-secondary flex items-center gap-2">
+        <Play className="w-4 h-4 text-accent" />
+        Generation Progress
+        <span className="text-xs text-txt-muted ml-auto">
+          {completedCount}/{sceneJobs.length} completed
+        </span>
+      </h3>
+
+      <div className="space-y-1.5">
+        {sceneJobs.map((sj) => (
+          <SceneProgress
+            key={sj.jobId}
+            jobId={sj.jobId}
+            sceneNumber={sj.sceneNumber}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <span className="text-xs text-txt-muted">
+          Total: ~{totalDuration}s video
+        </span>
+      </div>
+
+      {/* All completed banner */}
+      {allCompleted && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-4 rounded-xl bg-green-500/10 border border-green-500/20"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 className="w-5 h-5 text-green-500" />
+            <span className="text-sm font-semibold text-green-400">
+              All scenes completed!
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {jobs
+              .filter((j) => j.outputUrl)
+              .map((j) => (
+                <a
+                  key={j.sceneNumber}
+                  href={j.outputUrl!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs text-accent hover:text-accent-glow transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Scene {j.sceneNumber} video
+                </a>
+              ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Failure notice */}
+      {anyFailed && !allCompleted && (
+        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-400" />
+          <span className="text-xs text-red-400">
+            Some scenes failed. Check the job queue for details.
+          </span>
+        </div>
+      )}
+    </motion.div>
   );
 }
