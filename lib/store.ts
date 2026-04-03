@@ -5,8 +5,8 @@ interface AppState {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
 
-  activeTab: "text2video" | "image2video" | "video2video" | "image" | "multiscene" | "avatar";
-  setActiveTab: (tab: "text2video" | "image2video" | "video2video" | "image" | "multiscene" | "avatar") => void;
+  activeTab: "text2video" | "image2video" | "video2video" | "image" | "multiscene" | "avatar" | "tts";
+  setActiveTab: (tab: "text2video" | "image2video" | "video2video" | "image" | "multiscene" | "avatar" | "tts") => void;
 
   selectedModel: string;
   setSelectedModel: (model: string) => void;

@@ -440,6 +440,64 @@ export class ApifreeClient {
     }
   }
 
+  async submitAudio(params: {
+    model: string;
+    prompt: string;
+    voice: string;
+    speed?: number;
+  }): Promise<{ request_id: string }> {
+    if (this.isMock) {
+      return { request_id: `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` };
+    }
+
+    const body = {
+      model: params.model,
+      prompt: params.prompt,
+      speed: params.speed ?? 1,
+      voice: params.voice,
+    };
+
+    const res = await this.fetchWithRetry(`${this.baseUrl}/audio/submit`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const requestId = data.resp_data?.request_id || data.request_id || data.id;
+    if (!requestId) throw new Error("No request_id in response");
+    return { request_id: requestId };
+  }
+
+  async getAudioResult(requestId: string): Promise<{ status: string; audioUrl?: string }> {
+    if (this.isMock) {
+      return { status: "success", audioUrl: "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Sevish_-__nbsp_.mp3" };
+    }
+
+    const res = await this.fetchWithRetry(
+      `${this.baseUrl}/audio/${requestId}/result`,
+      { method: "GET", headers: this.headers() }
+    );
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`API error ${res.status}: ${errBody}`);
+    }
+
+    const data = await res.json();
+    const respData = data.resp_data || data;
+    const status = respData.status || "processing";
+    const audioList = respData.audio_list || [];
+    const audioUrl = audioList.length > 0 ? audioList[0] : undefined;
+
+    return { status, audioUrl };
+  }
+
   async enhancePrompt(prompt: string): Promise<string> {
     if (this.isMock) {
       return `Cinematic ${prompt}, 4K ultra-detailed, dramatic lighting, smooth camera movement, professional color grading, depth of field, film grain`;
@@ -493,6 +551,7 @@ function getHardcodedModels(): ApiModel[] {
     { id: "flux-1.1-pro", name: "Flux 1.1 Pro", type: "image", owned_by: "black-forest-labs" },
     { id: "google/nano-banana-pro/edit", name: "Nano Banana Pro Edit", type: "image-edit", owned_by: "google" },
     { id: "skywork-ai/skyreels-v3/pro/single-avatar", name: "SkyReels V3 Pro Avatar", type: "audio-to-video", owned_by: "skywork" },
+    { id: "hexgrad/kokoro-tts/italian", name: "Kokoro Italian TTS", type: "tts", owned_by: "hexgrad" },
   ];
 }
 

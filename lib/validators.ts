@@ -81,6 +81,13 @@ export const multiSceneSchema = z.object({
 export type SplitScenesInput = z.infer<typeof splitScenesSchema>;
 export type MultiSceneInput = z.infer<typeof multiSceneSchema>;
 
+export const ttsSchema = z.object({
+  prompt: z.string().min(1, "Text is required").max(2500),
+  voice: z.enum(["if_sara", "im_nicola"]).default("if_sara"),
+  speed: z.number().min(0.1).max(5).default(1),
+});
+
+export type TtsInput = z.infer<typeof ttsSchema>;
 export type TextToVideoInput = z.infer<typeof textToVideoSchema>;
 export type ImageToVideoInput = z.infer<typeof imageToVideoSchema>;
 export type VideoToVideoInput = z.infer<typeof videoToVideoSchema>;

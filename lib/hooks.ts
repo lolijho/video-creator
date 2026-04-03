@@ -244,6 +244,29 @@ export function useGenerateAvatar() {
   });
 }
 
+// TTS
+export function useGenerateTTS() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { prompt: string; voice: string; speed: number }) => {
+      const res = await fetch("/api/generate/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "TTS generation failed");
+      }
+      return res.json() as Promise<{ audioUrl: string; jobId: string }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+  });
+}
+
 // Gallery
 export function useGallery(filters?: { model?: string; type?: string; page?: number }) {
   return useQuery({

@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { type VideoJob, useDeleteJob, useRetryJob } from "@/lib/hooks";
 import { formatRelativeTime, formatDuration, formatFileSize } from "@/lib/utils";
-import { Download, Trash2, RefreshCw, Play, Clock, HardDrive } from "lucide-react";
+import { Download, Trash2, RefreshCw, Play, Clock, HardDrive, Volume2 } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -19,6 +19,7 @@ export function VideoCard({ video }: VideoCardProps) {
 
   const videoSrc = video.outputUrl || video.apiVideoUrl;
   const isImage = video.type === "image";
+  const isTTS = video.type === "tts";
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -37,7 +38,7 @@ export function VideoCard({ video }: VideoCardProps) {
     if (video.outputUrl) {
       const a = document.createElement("a");
       a.href = video.outputUrl;
-      a.download = isImage ? `${video.id}.png` : `${video.id}.mp4`;
+      a.download = isTTS ? `${video.id}.mp3` : isImage ? `${video.id}.png` : `${video.id}.mp4`;
       a.click();
     }
   };
@@ -58,9 +59,16 @@ export function VideoCard({ video }: VideoCardProps) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Video / Thumbnail / Image */}
+      {/* Video / Thumbnail / Image / Audio */}
       <div className={`${isImage ? "aspect-square" : "aspect-video"} bg-bg-elevated relative overflow-hidden`}>
-        {isImage && videoSrc ? (
+        {isTTS && videoSrc ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-4">
+            <Volume2 className="w-8 h-8 text-accent" />
+            <audio controls className="w-full h-8" src={videoSrc} preload="metadata">
+              Your browser does not support audio playback.
+            </audio>
+          </div>
+        ) : isImage && videoSrc ? (
           <img
             src={videoSrc}
             alt={video.prompt?.slice(0, 80) || "Generated image"}

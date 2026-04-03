@@ -60,6 +60,8 @@ function getMetadataForModel(id: string): Partial<ModelMetadata> {
     return { maxDuration: 0, estimatedSeconds: 10, badge: "FAST", description: "Black Forest Labs Flux 1.1 Pro" };
   if (lower.includes("skyreels") || lower.includes("avatar"))
     return { maxDuration: 200, estimatedSeconds: 120, badge: "PRO", description: "SkyReels V3 - talking avatar from audio+image, 1080p up to 200s" };
+  if (lower.includes("kokoro") || (lower.includes("tts") && lower.includes("italian")))
+    return { maxDuration: 0, estimatedSeconds: 5, badge: "TTS", description: "Kokoro - high quality Italian text-to-speech" };
   return {};
 }
 
@@ -80,6 +82,7 @@ function parseModelTypes(type: unknown): string[] {
     const t = type.toLowerCase();
     const types: string[] = [];
     if (t === "image") return ["image"];
+    if (t === "tts") return ["tts"];
     if (t.includes("audio-to-video") || t.includes("avatar")) return ["avatar"];
     if (t.includes("text") || t.includes("t2v")) types.push("text2video");
     if (t.includes("image") || t.includes("i2v")) types.push("image2video");
@@ -92,11 +95,11 @@ function parseModelTypes(type: unknown): string[] {
 
 function isVideoOrImageModel(model: { id: string; type?: unknown }): boolean {
   // Check if model ID contains video-related or image-generation keywords
-  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream|dall-e|gpt-image|flux|skyreels|avatar/i.test(model.id)) return true;
+  if (/video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx|dream|dall-e|gpt-image|flux|skyreels|avatar|tts|kokoro|audio/i.test(model.id)) return true;
 
   if (model.type) {
     const typeStr = typeof model.type === "string" ? model.type : JSON.stringify(model.type);
-    return /video|v2v|t2v|i2v|image|avatar|audio/i.test(typeStr);
+    return /video|v2v|t2v|i2v|image|avatar|audio|tts/i.test(typeStr);
   }
 
   return /video|veo|kling|wan|cog|luma|minimax|hunyuan|ltx/i.test(model.id);
@@ -227,6 +230,7 @@ function getHardcodedVideoModels(): VideoModel[] {
     { id: "flux-1.1-pro", name: "Flux 1.1 Pro", types: ["image"], provider: "black-forest-labs" },
     { id: "google/nano-banana-pro/edit", name: "Nano Banana Pro Edit", types: ["image"], provider: "google" },
     { id: "skywork-ai/skyreels-v3/pro/single-avatar", name: "SkyReels V3 Pro Avatar", types: ["avatar"], provider: "skywork" },
+    { id: "hexgrad/kokoro-tts/italian", name: "Kokoro Italian TTS", types: ["tts"], provider: "hexgrad" },
   ];
 
   return models.map((m) => ({
